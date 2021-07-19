@@ -1,0 +1,467 @@
+\documentclass[11pt, a4paper, twoside]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+\usepackage[inline]{enumitem}
+\usepackage{xcolor}
+\usepackage{minted}
+\usemintedstyle{borland}
+\usepackage[belowskip=0pt,aboveskip=0pt,font=small,labelfont=small]{caption}
+\captionsetup{width=0.9\linewidth}
+\setlength\intextsep{0pt}
+
+\setlist[itemize]{noitemsep, topsep=0pt}
+%\fancyhead[RO,LE]{EE2703: Assignment 5}
+
+%\cfoot{\thepage}
+
+\title{EE2703: Assignment 5}
+\author{KORRA SRIKANTH\\ {\small EE19B033}}
+\date{\today}
+
+%\pagestyle{fancy}
+\begin{document}	
+	
+\maketitle % Insert the title, author and date		
+\section*{Introduction}
+ We wish to solve for the currents in a resistor.
+ The currents depend on the shape of the resistor.
+ we also want to know which part of the resistor is likely to get hottest.
+
+ \section*{Aim:}
+  \textbf{The goal of this assignment is the following:}
+  \begin{itemize}
+  \item
+  	To solve for currents in a system.
+  \item
+  	To solve 2-D Laplace equations in an iterative manner.
+  \item
+	To understand how to vectorize code in python.
+  \item
+	To plot graphs to understand the 2-D Laplace equation.	
+\end{itemize}  
+  
+\section*{Task 1:\\ Defining parameters and Initializing the potential matrix:}
+
+\begin{itemize}
+\item Asking the user to pass parameter values  \(N_x\) , \(N_y\) and r.
+\item
+  Define the Parameters, The parameter values taken for my particular code were \(N_x\) and \(N_y\) and No of iterations : 1500
+\item
+  These values are taken to discuss about Stopping condition,etc
+\item
+  To allocate the potential array \(\phi = 0\) .Note that the array
+  should have \(N_y\) rows and \(N_x\) columns.
+\item
+  To find the indices which lie inside the circle of radius(r) using
+  meshgrid() by equation :
+\end{itemize}
+
+\begin{equation}
+X ^2 +Y ^2 \leq	 r^2
+\end{equation}
+
+\begin{itemize}
+\item
+  Then assign 1v to those indices.
+\item
+  To plot a contour plot of potential \(\phi\) and to mark V=1 region in
+  red
+\end{itemize}
+
+\subsection*{Code:}
+\begin{verbatim}
+if (len(argv) ==4):
+    Nx = int(argv[1])         # No. of steps along the x direction
+    Ny = int(argv[2])         # No. of steps along the y direction
+    r = float(argv[3])
+    print("Using user provided params")
+else:
+    Nx = 25
+    Ny = 25  
+    r = 8
+    print("Using default parameters") 
+
+phi = zeros((Nx,Ny))
+Niter = 1500
+x = linspace(-Nx/2,Nx/2,Nx)
+y = linspace(Nx/2,-Nx/2,Ny)
+Y,X = meshgrid(y,x)
+
+# Finding out the points with 1v potential
+Z = where(X*X + Y*Y <= r*r )
+
+# Marking potential = 1V points in the phi matrix 
+for i in range(Z[0].size):
+    phi[Z[0][i],Z[1][i]] = 1
+  
+# Plotting the 1V points and the contour plot of phi matrix
+figure(1) 
+title('1V Potential and the contour plot of potential matrix')
+xlabel(r'$x$')
+ylabel(r'$y$')
+plot(x[Z[0]],y[Z[1]],'ro', label = '1V Potential')
+contour(X,Y,phi)
+legend()
+grid()
+show()   
+\end{verbatim}
+
+	     \begin{figure}[!tbh]
+        \centering
+        \includegraphics[scale=0.8]{Figure_51.png}  
+        \caption{Contour plot of initial potential}
+   \end{figure}
+   
+  
+  
+\section*{Task 2 : \\Performing the Iterations:}
+
+\begin{itemize}
+   \item To update the potential \(\phi\) according to Equation below using
+     vectorized code
+   \end{itemize}
+   
+   \begin{equation}
+           \phi_{i,j} = \frac{\phi_{i+1,j} + \phi_{i-1,j} + \phi_{i,j+1} + \phi_{i,j-1}}{4} 
+   \end{equation}
+   
+  
+   \begin{itemize}
+   \item
+     To plot the errors in semilog and loglog and observe how the errors
+     are evolving.
+   \end{itemize}
+
+\subsection*{Code:}
+\begin{verbatim}
+# iteration which calculates the steady state potential array
+error=[]
+e1 = zeros((30))
+# iteration which calculates the steady state potential array
+for  i in range(Niter) :
+    oldphi = phi.copy()
+    phi[1:-1,1:-1] = 0.25*(phi[1:-1,0:-2]+phi[1:-1,2:]+phi[0:-2,1:-1]+phi[2:,1:-1])
+    phi[1:-1,0]=phi[1:-1,1]
+    phi[1:-1,Nx-1]=phi[1:-1,Nx-2]
+    phi[0,1:-1]=phi[1,1:-1]
+    phi[0,0]=phi[0,1]
+    phi[0,Nx-1]=phi[0,Nx-2]
+    phi[Ny-1,1:-1]=0.0
+    phi[Z]=1.0
+    error.append((abs(oldphi-phi)).max())
+\end{verbatim}
+
+     \begin{figure}[!tbh]
+      \centering
+      \includegraphics[scale=0.8]{Figure_52.png}\\
+      %\includegraphics[scale=0.8]{Figure_53.png}  
+      \caption{Semilog plots of Error vs No.of Iterations}
+ \end{figure}
+ 
+  \begin{figure}[!tbh]
+      \centering
+     % \includegraphics[scale=0.8]{Figure_52.png}\\
+      \includegraphics[scale=0.8]{Figure_53.png}  
+      \caption{Log-Log plots of Error vs No.of Iterations}
+ \end{figure}
+ 
+ 
+ \newpage
+ 
+\section*{Task 3 :\\ Fitting the exponential function to the error plots:}
+
+\begin{itemize}
+\item
+  To find the fit using Least squares for all iterations
+  and for iterations \(\geq\) 500
+  separately and compare them.
+\item
+  As we know that error follows \(Ae^{Bx}\) at large iterations, we use
+  equation given below to fit the errors using least squares
+\end{itemize}
+
+\begin{equation}
+    logy = logA + Bx
+\end{equation}
+
+\begin{itemize}
+\item
+  To find the time constant of error function obtained for the two cases
+  using lstsq and compare them
+\item
+  To plot the two fits obtained and observe them
+\end{itemize}
+
+\subsection*{Code:}
+
+\begin{verbatim}
+expe = error[500:]
+logy = log(expe)
+n = linspace(501,Niter,Niter-500)
+L1 = ones((Niter-500,2))
+L1[:,0]= n
+
+expe1 = error[:]
+logy1 = log(expe1)
+n1 = linspace(1,Niter,Niter)
+R1 = ones((Niter,2))
+R1[:,0]= n1
+
+# Fitting the error to an exponential for > 500 iterations
+err = linalg.lstsq(L1,logy,rcond=-1)[0] 
+error_fit =  err[1] + err[0]*n
+
+
+# Fitting the error to an exponential
+err1= linalg.lstsq(R1,logy1,rcond=-1)[0] 
+error_fit1 =  err1[1] + err1[0]*n1
+
+
+# Plotting the error fits
+figure(4)
+title('Error in semilog scalefor all iterations')
+xlabel(r'$Iterations$')
+ylabel(r'$Error$')
+plot(linspace(1,Niter,Niter),log(error),"g",label = 'errors')
+plot(n,error_fit,"ro",label = 'fit error > 500 iter')
+plot(n1,error_fit1,"b--",label = 'fit error')
+grid()
+legend()
+show()
+
+# Plotting the 3D surface plot of potential
+fig4 = figure(5) 
+ax = p3.Axes3D(fig4)
+title('The 3-D Surface Plot of the potential')
+ylabel(r'$GROUND$')
+surf = ax.plot_surface(X,Y,phi,rstride=1,cstride=1,cmap = cm.jet,label = 'Potential')
+show()
+
+
+\end{verbatim}
+
+
+
+\begin{figure}[!tbh]
+ \centering
+ \includegraphics[scale=0.8]{Figure_154.png}  
+ %\includegraphics[scale=0.8]{Figure_55.png}  
+ \caption{Semilog plot of Error vs No.of Iterations}
+\end{figure}
+
+
+\newpage
+
+\section*{Task 4 :\\Plotting 3D surface plot and Contour plot of potential }
+\begin{itemize}
+\item
+  To do a 3-D surface plot of the potential.
+\item
+  To plot contour plot of potential
+\item
+  And analyse them and to comment about flow of currents
+\end{itemize}
+\subsection*{Code:}
+
+\begin{verbatim}
+ # Plotting the 3D surface plot of potential
+fig4 = figure(5) 
+ax = p3.Axes3D(fig4)
+title('The 3-D Surface Plot of the potential')
+ylabel(r'$GROUND$')
+surf = ax.plot_surface(X,Y,phi,rstride=1,cstride=1,cmap = cm.jet,label = 'Potential')
+show()
+
+# Contour plot of potential
+figure(6)
+title('Contour plot of the potential') 
+xlabel(r'$x$')
+ylabel(r'$y$')
+plot(x[Z[0]],y[Z[1]],'ro', label = '1V Potential')
+clabel(contour(x,y,phi) , inline = True , fontsize = 8)
+grid()
+legend()
+show()
+\end{verbatim}
+
+\begin{figure}[!tbh]
+ \centering
+ \includegraphics[scale=0.8]{Figure_55.png}  
+ \caption{3-D Surface potential plot }
+\end{figure}
+\newpage
+
+\begin{figure}[!tbh]
+ \centering
+ \includegraphics[scale=0.8]{Figure_56.png}  
+ \caption{ Contour plot of potential}
+\end{figure}
+\newpage
+
+
+\section*{Task 5 :\\Vector Plot of Currents:}
+\begin{itemize}
+\item
+  To obtain the currents by computing the gradient.
+\item
+  The actual value of \(\sigma\) does not matter to the shape of the
+  current profile, so we set it to unity. Our equations are
+\end{itemize}
+
+\begin{equation}
+    J_x = -\frac{\partial \phi}{\partial x} 
+  \end{equation}
+
+\begin{equation}
+    J_y = -\frac{\partial \phi}{\partial y} 
+  \end{equation}
+
+\begin{itemize}
+\item
+  To program this we use these equations as follows:
+\end{itemize}
+
+\begin{equation}
+        J_{x,ij} = \frac{1}{2}(\phi_{i,j-1} - \phi_{i,j+1}) 
+    \end{equation}
+
+\begin{equation}
+        J_{y,ij} = \frac{1}{2}(\phi_{i-1,j} - \phi_{i+1,j}) 
+    \end{equation}
+  
+ \subsection*{Code:}
+\begin{verbatim}
+# Plotting the current vectors using quiver
+figure(7) 
+title('Quiver plot of the current densities')
+xlabel(r'$x$')
+ylabel(r'$y$')
+plot(x[Z[0]],y[Z[1]],'ro', label = '1V potential')
+quiver(y,x,-Jy[::-1,:],-Jx[::-1,:],scale=1.8,scale_units='inches',label="Current density")
+grid()
+legend()
+show()   
+\end{verbatim}
+
+  \begin{figure}[!tbh]
+   \centering
+   \includegraphics[scale=0.8]{Figure_57.png}  
+   \caption{Vector plot of current flow}
+  \end{figure}
+
+
+
+ \section*{Additional :\\\\Heat Map of the conductor:}
+
+As the current flows in the conductor, it heats up. Thus increasing it's
+temperature.This \\phenomenon is called Joule Heating.
+\\The heat equation is given by :
+
+\begin{equation}
+ \kappa \nabla^2{T}=-\frac{1}{\sigma} {|j|^2}   
+\end{equation}
+ We take,
+ \begin{equation}
+   \kappa=1,\sigma=1 \ and \ \Delta{x}=1  \ for \ simplicity. 
+ \end{equation}
+
+ Thus expanding this equation gives us:
+
+\begin{equation}
+ T_{i,j}= \frac{T_{i+1,j}+T_{i-1,j}+T_{i,j+1}+T_{i,j-1}+|J|^2}{4(\Delta{x})^2}  
+\end{equation}
+
+\\Thus by updating the temperature \texttt{Niter} times we get a
+temperature which converges. \\The boundary condition is that at the
+boundary \(\frac{\partial{T}}{\partial{n}}=0\)
+
+\subsection*{Code:}
+\begin{verbatim} 
+T = zeros((Nx,Ny))
+T[:,:] = 300
+sigma = 6*(10**7)
+kappa = 385
+for i in range(Niter):
+    T[1:-1,1:-1] = 0.25*(T[1:-1,0:-2] + T[1:-1,2:] + T[0:-2,1:-1] + T[2:,1:-1] + (((Jx**2)[1:-1,1:-1] + (Jy**2)[1:-1,1:-1])*sigma*(16*(10**-8)))/kappa)
+    T[1:-1,0]=T[1:-1,1]
+    T[1:-1,Nx-1]=T[1:-1,Nx-2]
+    T[0,1:-1]=T[1,1:-1]
+    T[Z] = 300.0
+
+
+fig1=figure(4)
+ax=p3.Axes3D(fig1)
+title('The 3-D surface plot of the temperature')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('Temperature')
+ax.plot_surface(X, Y, T, rstride=1, cstride=1, cmap=cm.jet,linewidth=0, antialiased=False)
+show()
+\end{verbatim} 
+
+ \begin{figure}[!tbh]
+ \centering
+ \includegraphics[scale=0.8]{Figure_58.png}  
+ \caption{\textbf{3D surface plot of the Temperature}}
+ \end{figure}
+   
+   
+\newpage
+  
+\subsection*{Code:}
+\begin{verbatim}     
+J_sq = Jx**2 + Jy**2
+
+figure(9)
+title('Contour plot of the heat generated')
+cp = contour(-Y,-X,J_sq)
+clabel(cp,inline=True,colors='r')
+xlabel('x')
+ylabel('y')
+grid()
+show()
+\end{verbatim}
+ 
+ \begin{figure}[!tbh]
+ \centering
+ \includegraphics[scale=0.8]{Figure_159.png}  
+ \caption{Counter plot of the Heat Generated}
+ \end{figure}
+   
+\newpage
+      
+\section*{Conclusion :}\label{results-and-conclusion}
+  
+  \begin{itemize}
+  \item
+    To conclude , Most of the current is in the narrow region at the
+    bottom.So that is what will get strongly heated.\\
+  \item
+    Since there is almost no current in the upper region of plate,the
+    bottom part of the plate gets hotter and temperature increases in down
+    region of the plate.\\
+  \item
+    And we know that heat generated is from \(\vec{J}.\vec{E}\) (ohmic
+    loss) so since \(\vec{J}\) and \(\vec{E}\) are higher in the bottom
+    region of the plate, there will more heat generation and temperature
+    rise will be present.\\
+  \item
+    So overall we looked the modelling of the currents in resistor in this
+    report ,and we observe that the best method to solve this is to
+    increase \(N_x\) and \(N_y\) to very high values(100 or \(\geq\)
+    100)and increase the no of iterations too, so that we get accurate
+    answers i.e currents in the resistor.\\
+  \item
+    But the tradeoff is this method of solving is very slow even though we
+    use vectorized code because the decrease in errors is very slow w.r.t
+    no of iterations.
+  \end{itemize}
+ 
+   \end{document}
+  
+  
